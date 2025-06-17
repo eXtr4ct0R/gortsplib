@@ -126,7 +126,7 @@ func (s *SessionDescription) unmarshalOrigin(value string) error {
 	var err error
 	s.Origin.SessionVersion, err = strconv.ParseUint(tmp, 10, 64)
 	if err != nil {
-		return fmt.Errorf("%w `%v`", errSDPInvalidNumericValue, tmp)
+		//return fmt.Errorf("%w `%v`", errSDPInvalidNumericValue, tmp)
 	}
 
 	if value == "-0" { // live reporter app
@@ -154,7 +154,7 @@ func (s *SessionDescription) unmarshalOrigin(value string) error {
 		s.Origin.SessionID, err = strconv.ParseUint(tmp, 10, 64)
 	}
 	if err != nil {
-		return fmt.Errorf("%w `%v`", errSDPInvalidNumericValue, tmp)
+		//return fmt.Errorf("%w `%v`", errSDPInvalidNumericValue, tmp)
 	}
 
 	s.Origin.Username = value
@@ -259,7 +259,7 @@ func unmarshalBandwidth(value string) (*psdp.Bandwidth, error) {
 
 	bandwidth, err := strconv.ParseUint(parts[1], 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("%w `%v`", errSDPInvalidNumericValue, parts[1])
+		//	return nil, fmt.Errorf("%w `%v`", errSDPInvalidNumericValue, parts[1])
 	}
 
 	return &psdp.Bandwidth{
@@ -342,12 +342,12 @@ func (s *SessionDescription) unmarshalTiming(value string) error {
 	var err error
 	td.Timing.StartTime, err = strconv.ParseUint(fields[0], 10, 64)
 	if err != nil {
-		return fmt.Errorf("%w `%v`", errSDPInvalidNumericValue, fields[1])
+		//return fmt.Errorf("%w `%v`", errSDPInvalidNumericValue, fields[1])
 	}
 
 	td.Timing.StopTime, err = strconv.ParseUint(fields[1], 10, 64)
 	if err != nil {
-		return fmt.Errorf("%w `%v`", errSDPInvalidNumericValue, fields[1])
+		//return fmt.Errorf("%w `%v`", errSDPInvalidNumericValue, fields[1])
 	}
 
 	s.TimeDescriptions = append(s.TimeDescriptions, td)
@@ -468,7 +468,7 @@ func (s *SessionDescription) unmarshalMediaDescription(value string) error {
 			"UDP", "RTP", "AVP", "SAVP", "SAVPF",
 			"MP2T", "TLS", "DTLS", "SCTP", "AVPF", "TCP",
 		}); i == -1 {
-			return fmt.Errorf("%w `%v`", errSDPInvalidNumericValue, fields[2])
+			//return fmt.Errorf("%w `%v`", errSDPInvalidNumericValue, fields[2])
 		}
 		newMediaDesc.MediaName.Protos = append(newMediaDesc.MediaName.Protos, proto)
 	}
@@ -748,4 +748,20 @@ func (s *SessionDescription) Unmarshal(byts []byte) error {
 	}
 
 	return nil
+}
+
+func sanitizeSDP(data []byte) []byte {
+	lines := strings.Split(string(data), "\n")
+	for i, line := range lines {
+		if strings.HasPrefix(line, "o=") {
+			parts := strings.Fields(line[2:])
+			for j, part := range parts {
+				if part == "undefined" {
+					parts[j] = "0"
+				}
+			}
+			lines[i] = "o=" + strings.Join(parts, " ")
+		}
+	}
+	return []byte(strings.Join(lines, "\n"))
 }
